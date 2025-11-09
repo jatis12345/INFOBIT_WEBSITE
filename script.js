@@ -140,23 +140,19 @@ contactForm.addEventListener('submit', async (e) => {
         message: formData.get('message')
     };
 
-    // Validate reCAPTCHA
-    const recaptchaResponse = grecaptcha.getResponse();
-    if (!recaptchaResponse) {
-        showMessage('Mohon verifikasi reCAPTCHA terlebih dahulu.', 'error');
-        return;
-    }
-
     // Show loading state
     const btnText = document.querySelector('.btn-text');
     const btnLoading = document.querySelector('.btn-loading');
     const submitBtn = document.querySelector('.btn-submit');
-    
+
     btnText.style.display = 'none';
     btnLoading.style.display = 'inline-flex';
     submitBtn.disabled = true;
 
     try {
+        // Get reCAPTCHA v3 token
+        const recaptchaToken = await grecaptcha.execute('6LcC4wYsAAAAAOqozW42LUFpdnJq7c1krcosxoI_', { action: 'submit' });
+
         // Send form data to PHP handler
         const response = await fetch('send_email.php', {
             method: 'POST',
@@ -165,7 +161,7 @@ contactForm.addEventListener('submit', async (e) => {
             },
             body: JSON.stringify({
                 ...data,
-                recaptcha: recaptchaResponse
+                recaptcha: recaptchaToken
             })
         });
 
@@ -174,7 +170,6 @@ contactForm.addEventListener('submit', async (e) => {
         if (result.success) {
             showMessage('Terima kasih! Pesan Anda telah terkirim. Kami akan segera menghubungi Anda.', 'success');
             contactForm.reset();
-            grecaptcha.reset();
         } else {
             showMessage(result.message || 'Terjadi kesalahan. Mohon coba lagi.', 'error');
         }

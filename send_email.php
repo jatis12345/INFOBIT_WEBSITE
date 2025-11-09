@@ -82,6 +82,12 @@ if (!empty($recaptcha_secret)) {
     if (!$recaptcha_json->success) {
         sendResponse(false, 'Verifikasi reCAPTCHA gagal. Mohon coba lagi.');
     }
+
+    // Check reCAPTCHA v3 score (0.0 to 1.0, higher is better)
+    // Score < 0.5 indicates likely bot behavior
+    if (isset($recaptcha_json->score) && $recaptcha_json->score < 0.5) {
+        sendResponse(false, 'Verifikasi keamanan gagal. Mohon coba lagi.');
+    }
 }
 
 // Prepare email
