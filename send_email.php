@@ -11,7 +11,7 @@ header('Access-Control-Allow-Headers: Content-Type');
 // Configuration
 $to_email = 'info@infobit.co.id';
 $company_name = 'PT INFOBIT CIPTA MANDIRI';
-$recaptcha_secret = 'YOUR_RECAPTCHA_SECRET_KEY'; // GANTI dengan secret key Anda
+$recaptcha_secret = '6LcC4wYsAAAAAPsCSoU3eZ11mohtltBvFkJo6qK5';
 
 // Function to send JSON response
 function sendResponse($success, $message) {
