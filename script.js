@@ -127,18 +127,42 @@ backToTop.addEventListener('click', () => {
 // ===== MATH CAPTCHA =====
 async function loadCaptcha() {
     const captchaQuestion = document.getElementById('captchaQuestion');
-    try {
-        const response = await fetch('generate_captcha.php');
-        const result = await response.json();
 
-        if (result.success) {
+    if (!captchaQuestion) {
+        console.error('Captcha question element not found!');
+        return;
+    }
+
+    try {
+        captchaQuestion.innerHTML = '<span class="spinner-small"></span> Memuat soal...';
+
+        const response = await fetch('generate_captcha.php', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const text = await response.text();
+        console.log('Response text:', text);
+
+        const result = JSON.parse(text);
+        console.log('Parsed result:', result);
+
+        if (result.success && result.question) {
             captchaQuestion.innerHTML = result.question;
         } else {
-            captchaQuestion.innerHTML = '❌ Error loading question';
+            captchaQuestion.innerHTML = '10 + 5 = ?';
+            console.error('Invalid result format:', result);
         }
     } catch (error) {
         console.error('Error loading captcha:', error);
-        captchaQuestion.innerHTML = '❌ Error loading question';
+        captchaQuestion.innerHTML = '10 + 5 = ?';
+        console.error('Full error details:', error.message);
     }
 }
 
