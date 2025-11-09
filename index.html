@@ -11,7 +11,6 @@
     <link rel="apple-touch-icon" href="Logo Infobit.png">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
     <!-- Loading Animation -->
@@ -391,7 +390,14 @@
                         </div>
 
                         <div class="form-group">
-                            <div class="g-recaptcha" data-sitekey="6LcC4wYsAAAAAOqozW42LUFpdnJq7c1krcosxoI_"></div>
+                            <label for="captcha">Verifikasi Keamanan</label>
+                            <div class="captcha-container">
+                                <div class="captcha-question" id="captchaQuestion">
+                                    <span class="spinner-small"></span> Memuat soal...
+                                </div>
+                                <input type="number" id="captcha" name="captcha" required placeholder="Masukkan jawaban" autocomplete="off">
+                            </div>
+                            <small class="form-note">💡 Jawab soal matematika di atas untuk memverifikasi Anda bukan bot</small>
                         </div>
 
                         <button type="submit" class="btn btn-primary btn-submit">
