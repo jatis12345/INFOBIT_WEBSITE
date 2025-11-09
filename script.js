@@ -124,6 +124,29 @@ backToTop.addEventListener('click', () => {
     });
 });
 
+// ===== MATH CAPTCHA =====
+async function loadCaptcha() {
+    const captchaQuestion = document.getElementById('captchaQuestion');
+    try {
+        const response = await fetch('generate_captcha.php');
+        const result = await response.json();
+
+        if (result.success) {
+            captchaQuestion.innerHTML = result.question;
+        } else {
+            captchaQuestion.innerHTML = '❌ Error loading question';
+        }
+    } catch (error) {
+        console.error('Error loading captcha:', error);
+        captchaQuestion.innerHTML = '❌ Error loading question';
+    }
+}
+
+// Load captcha on page load
+window.addEventListener('load', () => {
+    loadCaptcha();
+});
+
 // ===== CONTACT FORM =====
 const contactForm = document.getElementById('contactForm');
 const formMessage = document.getElementById('formMessage');
@@ -137,7 +160,8 @@ contactForm.addEventListener('submit', async (e) => {
         name: formData.get('name'),
         email: formData.get('email'),
         phone: formData.get('phone'),
-        message: formData.get('message')
+        message: formData.get('message'),
+        captcha: formData.get('captcha')
     };
 
     // Show loading state
@@ -150,19 +174,13 @@ contactForm.addEventListener('submit', async (e) => {
     submitBtn.disabled = true;
 
     try {
-        // Get reCAPTCHA v3 token
-        const recaptchaToken = await grecaptcha.execute('6LcC4wYsAAAAAOqozW42LUFpdnJq7c1krcosxoI_', { action: 'submit' });
-
         // Send form data to PHP handler
         const response = await fetch('send_email.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                ...data,
-                recaptcha: recaptchaToken
-            })
+            body: JSON.stringify(data)
         });
 
         const result = await response.json();
@@ -170,12 +188,15 @@ contactForm.addEventListener('submit', async (e) => {
         if (result.success) {
             showMessage('Terima kasih! Pesan Anda telah terkirim. Kami akan segera menghubungi Anda.', 'success');
             contactForm.reset();
+            loadCaptcha(); // Load new question
         } else {
             showMessage(result.message || 'Terjadi kesalahan. Mohon coba lagi.', 'error');
+            loadCaptcha(); // Load new question
         }
     } catch (error) {
         console.error('Error:', error);
         showMessage('Terjadi kesalahan. Mohon coba lagi atau hubungi kami langsung via email.', 'error');
+        loadCaptcha(); // Load new question
     } finally {
         // Reset button state
         btnText.style.display = 'inline';

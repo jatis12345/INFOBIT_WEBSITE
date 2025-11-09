@@ -2,6 +2,8 @@
 // send_email.php
 // Email handler for PT INFOBIT CIPTA MANDIRI contact form
 
+session_start();
+
 // Set headers for JSON response
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -11,7 +13,6 @@ header('Access-Control-Allow-Headers: Content-Type');
 // Configuration
 $to_email = 'info@infobit.co.id';
 $company_name = 'PT INFOBIT CIPTA MANDIRI';
-$recaptcha_secret = '6LcC4wYsAAAAAPsCSoU3eZ11mohtltBvFkJo6qK5';
 
 // Function to send JSON response
 function sendResponse($success, $message) {
@@ -41,12 +42,33 @@ $name = isset($data['name']) ? htmlspecialchars(strip_tags(trim($data['name'])))
 $email = isset($data['email']) ? filter_var(trim($data['email']), FILTER_SANITIZE_EMAIL) : '';
 $phone = isset($data['phone']) ? htmlspecialchars(strip_tags(trim($data['phone']))) : '';
 $message = isset($data['message']) ? htmlspecialchars(strip_tags(trim($data['message']))) : '';
-$recaptcha_response = isset($data['recaptcha']) ? $data['recaptcha'] : '';
+$captcha_answer = isset($data['captcha']) ? intval($data['captcha']) : 0;
 
 // Validate required fields
 if (empty($name) || empty($email) || empty($phone) || empty($message)) {
     sendResponse(false, 'Mohon lengkapi semua field yang diperlukan');
 }
+
+// Validate math captcha
+if (!isset($_SESSION['captcha_answer']) || !isset($_SESSION['captcha_time'])) {
+    sendResponse(false, 'Sesi keamanan tidak valid. Mohon refresh halaman.');
+}
+
+// Check if captcha expired (10 minutes)
+if (time() - $_SESSION['captcha_time'] > 600) {
+    unset($_SESSION['captcha_answer']);
+    unset($_SESSION['captcha_time']);
+    sendResponse(false, 'Sesi keamanan telah berakhir. Mohon refresh halaman.');
+}
+
+// Verify captcha answer
+if ($captcha_answer !== $_SESSION['captcha_answer']) {
+    sendResponse(false, 'Jawaban verifikasi keamanan salah. Mohon coba lagi.');
+}
+
+// Clear captcha session after successful validation
+unset($_SESSION['captcha_answer']);
+unset($_SESSION['captcha_time']);
 
 // Validate email format
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -56,38 +78,6 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 // Validate phone (basic)
 if (!preg_match('/^[0-9\s\-\+\(\)]{10,20}$/', $phone)) {
     sendResponse(false, 'Format nomor HP tidak valid');
-}
-
-// Verify reCAPTCHA
-if (!empty($recaptcha_secret)) {
-    $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
-    $recaptcha_data = [
-        'secret' => $recaptcha_secret,
-        'response' => $recaptcha_response,
-        'remoteip' => $_SERVER['REMOTE_ADDR']
-    ];
-
-    $recaptcha_options = [
-        'http' => [
-            'method' => 'POST',
-            'header' => 'Content-Type: application/x-www-form-urlencoded',
-            'content' => http_build_query($recaptcha_data)
-        ]
-    ];
-
-    $recaptcha_context = stream_context_create($recaptcha_options);
-    $recaptcha_result = file_get_contents($recaptcha_url, false, $recaptcha_context);
-    $recaptcha_json = json_decode($recaptcha_result);
-
-    if (!$recaptcha_json->success) {
-        sendResponse(false, 'Verifikasi reCAPTCHA gagal. Mohon coba lagi.');
-    }
-
-    // Check reCAPTCHA v3 score (0.0 to 1.0, higher is better)
-    // Score < 0.5 indicates likely bot behavior
-    if (isset($recaptcha_json->score) && $recaptcha_json->score < 0.5) {
-        sendResponse(false, 'Verifikasi keamanan gagal. Mohon coba lagi.');
-    }
 }
 
 // Prepare email
